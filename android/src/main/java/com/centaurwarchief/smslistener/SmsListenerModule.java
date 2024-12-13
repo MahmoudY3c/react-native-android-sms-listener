@@ -23,21 +23,24 @@ public class SmsListenerModule extends ReactContextBaseJavaModule implements Lif
     }
 
     private void registerReceiverIfNecessary(BroadcastReceiver receiver) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && getCurrentActivity() != null) {
-            getCurrentActivity().registerReceiver(
-                receiver,
-                new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION)
-            );
-            isReceiverRegistered = true;
-            return;
-        }
-
-        if (getCurrentActivity() != null) {
-            getCurrentActivity().registerReceiver(
+        // register only once if it's not registered
+        if(!isReceiverRegistered) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && getCurrentActivity() != null) {
+                getCurrentActivity().registerReceiver(
                     receiver,
-                    new IntentFilter("android.provider.Telephony.SMS_RECEIVED")
-            );
-            isReceiverRegistered = true;
+                    new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION)
+                );
+                isReceiverRegistered = true;
+                return;
+            }
+
+            if (getCurrentActivity() != null) {
+                getCurrentActivity().registerReceiver(
+                        receiver,
+                        new IntentFilter("android.provider.Telephony.SMS_RECEIVED")
+                );
+                isReceiverRegistered = true;
+            }
         }
     }
 
@@ -50,6 +53,7 @@ public class SmsListenerModule extends ReactContextBaseJavaModule implements Lif
 
     @Override
     public void onHostResume() {
+        // stop call `registerReceiverIfNecessary` when host resume because it's will call the listener multiple times there's an already condition added but that maybe not necessary here
         registerReceiverIfNecessary(mReceiver);
     }
 
